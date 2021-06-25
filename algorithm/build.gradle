@@ -1,0 +1,93 @@
+apply plugin: 'com.android.library'
+apply plugin: 'maven'
+
+android {
+    compileSdkVersion 28
+
+
+
+    defaultConfig {
+        minSdkVersion 18
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = ['src/main/java']
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFile 'proguard-rules.pro'
+        }
+    }
+
+}
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+}
+
+/**
+ * task to delete the old jar
+ * 删除旧的jar 文件
+ */
+task deleteOldJar(type: Delete) {
+    delete 'release/lifesense-scale-formula.jar'
+}
+
+/**
+ * task to export contents as jar
+ * 将项目打包成Jar 文件，并导出
+ */
+task exportJar(type: Copy) {
+    from('build/intermediates/packaged-classes/release/')
+    into('release/')
+    include('classes.jar')
+    rename ('classes.jar', 'lifesense-scale-formula.jar')
+}
+
+/**
+ * 执行导出jar文件任务
+ */
+exportJar.dependsOn(deleteOldJar, build)
+
+/**
+ * 以Maven的形式输出jar
+ */
+task androidSourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.sourceFiles
+}
+
+artifacts {
+    archives androidSourcesJar
+}
+
+uploadArchives {
+    configuration = configurations.archives
+    repositories {
+        mavenDeployer {
+            pom.project {
+                version 1.6
+                artifactId "lifesense-scale-formula"
+                groupId "com.lifesense.formula"
+                packaging "jar"
+                description "Scale LSFormulaType Library"
+            }
+            //将jar文件上传到本地的maven 路径
+            repository(url: mavenLocal().getUrl())
+        }
+    }
+}
